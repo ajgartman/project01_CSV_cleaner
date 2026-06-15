@@ -1,5 +1,7 @@
 import pandas as pd
 
+# Testing file - Pandas practice
+
 # Exercise 1 - Series
 
 temp = [22.1, 19.5, 24.0, 21.3, 18.7, 25.4, 23.8]
