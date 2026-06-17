@@ -7,6 +7,7 @@ import pandas as pd
 import os
 from datetime import datetime as dt
 import matplotlib.pyplot as plt
+from fontTools.t1Lib import writeOther
 
 CSV_FILE = "fifa21_raw_data.csv"
 
@@ -77,7 +78,7 @@ def weight_formatting(weight):
 
 df["Weight"] = df["Weight"].apply(weight_formatting)
 # Using in-built function to change values to numbers
-df[["Weight","Height"]] = df[["Weight","Height"]].apply(pd.to_numeric)
+
 
 # After the modification...
 print("----- After formatting -----")
@@ -97,14 +98,21 @@ date_format = "%d/%m/%y"
 date_output = dt.strptime(time,date_format)
 
 def years_check(date):
-    formatting = date.split(",")
-    join_year = int(formatting[1])
-    current_year = date_output.year
 
-    if current_year - join_year > 10:
-        return "Veteran"
+    wrong_format = 0
+
+    if "," in date:
+        formatting = date.split(",")
+        join_year = int(formatting[1])
+        current_year = date_output.year
+
+        if current_year - join_year > 10:
+            return "Veteran"
+        else:
+            return "Less than 10 years"
     else:
-        return "Less than 10 years"
+        wrong_format += 1
+        return "Format not correct!"
 
 # Creating new column and applying function
 df["10 Year Mark"] = df["Joined"].apply(years_check)
@@ -119,8 +127,6 @@ def conversion(value):
     elif "K" in currency:
         number = currency.replace("K","")
         return float(number)*1000
-    elif currency == 0:
-        return 0
     else:
         return float(currency)
 
@@ -174,9 +180,8 @@ print("""
 Post clearing summary:
 1. Converted designated columns to their numerical forms.
 2. Removed unnecessary characters and newlines
-3. Checked which players are underpaid
-4. Checked duplicate rows
-5. Filled NULL columns with corresponding fallback values
+3. Checked duplicate rows
+4. Filled NULL columns with corresponding fallback values
 """)
 
 # Saving modified CSV - Output it later.
