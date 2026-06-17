@@ -14,4 +14,3 @@ Tasks:
 4. 'Value', 'Wage' and "Release Clause' are string columns. Convert them to numbers.
 For eg, "M" in value column is Million, so multiply the row values by 1,000,000, etc. - DONE
 5. Some columns have 'star' characters. Strip those columns of these stars and make the columns numerical - DONE
-6. Which players are highly valuable but still underpaid (on low wages)? (hint: scatter plot between wage and value) - DONE
