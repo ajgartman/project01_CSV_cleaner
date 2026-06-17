@@ -21,7 +21,7 @@ print("CSV information")
 print(reading.info())
 
 # Creating DataFrame object
-df = pd.DataFrame(reading)
+df = reading
 
 # Sequence
 #1.
@@ -49,9 +49,9 @@ def height_formatting(height):
     # Problem we need to solve is: how can we identify two separate cases.
 
     if "cm" in height:
-        return height[:(len(height)-2)]
+        return float(height[:(len(height)-2)])
     elif "'" in height:
-        feet_and_inches = height.strip('"').split("'")
+        feet_and_inches = height.replace('"',"").split("'")
         feet = feet_and_inches[0]
         inches = feet_and_inches[1]
         feet_cm = int(feet)*30.48
@@ -67,10 +67,10 @@ def weight_formatting(weight):
     # Two cases: "lbs" and "kg's"
     if "lbs" in weight:
         lbs_kg_ratio = 0.4535
-        modified_string = weight.strip("lbs")
+        modified_string = weight.replace("lbs","")
         return int(modified_string)*lbs_kg_ratio
     elif "kg" in weight:
-        modified_string = weight.strip("kg")
+        modified_string = weight.replace("kg","")
         return int(modified_string)
     else:
         return None
@@ -96,7 +96,7 @@ time = "01/01/21"
 date_format = "%d/%m/%y"
 date_output = dt.strptime(time,date_format)
 
-def age_check(date):
+def years_check(date):
     formatting = date.split(",")
     join_year = int(formatting[1])
     current_year = date_output.year
@@ -107,41 +107,91 @@ def age_check(date):
         return "Less than 10 years"
 
 # Creating new column and applying function
-df["10 Year Mark"] = df["Joined"].apply(age_check)
+df["10 Year Mark"] = df["Joined"].apply(years_check)
 
 # Task 4. Converting 'Value', 'Wage' and "Release Clause' into numerical form.
 def conversion(value):
     # Two cases.
-    currency = value.strip("€")
+    currency = value.replace("€","")
     if "M" in currency:
-        number = currency.strip("M")
+        number = currency.replace("M","")
         return float(number)*1000000
     elif "K" in currency:
-        number = currency.strip("K")
+        number = currency.replace("K","")
         return float(number)*1000
+    elif currency == 0:
+        return 0
     else:
-        return None
+        return float(currency)
 
 df[["Value","Wage","Release Clause"]] = df[["Value","Wage","Release Clause"]].map(conversion)
 
 # Task 5. Stripping the star symbol and changing to numerical
-
 columns = ["W/F","SM","IR"]
 
 df[columns] = df[columns].map(lambda x: int(x.strip("★").strip()))
-df[columns] = df[columns].apply(pd.to_numeric)
 
 ax1 = df.plot.scatter(x="Wage",y="Value")
 
-for idx,row in df.iterrows():
-    ax1.annotate(row["ID"],(row['Wage'], row['Value']))
+# Annotation of the graph - computationally heavy
+# for idx,row in df.iterrows():
+#     ax1.annotate(row["ID"],(row['Wage'], row['Value']))
 
 plt.xlabel("Wage of the Player")
 plt.ylabel("Current Value of the Player")
 plt.grid(True)
 plt.show()
 
+# Duplicate check (Extra)
+print("----- Duplicate Check -----")
+duplicates = df.duplicated()
+print("Checking if there are any duplicates...: ")
+print(duplicates[duplicates == True])
+
+# Filling missing values (Extra)
+df["Loan Date End"] = df["Loan Date End"].fillna("Not on Loan")
+print(df[["Loan Date End","Hits"]].dtypes)
+
+# Modifying Hits column
+
+def hits_formatting(value):
+
+    if pd.isna(value):
+        return 0
+    elif "K" in value:
+        value = value.replace("K","")
+        return float(value)*1000
+    else:
+        return float(value)
+
+df["Hits"] = df["Hits"].apply(hits_formatting)
+
+# Rerunning INFO
+print(df.info())
+
+# Summary
+print("""
+Post clearing summary:
+1. Converted designated columns to their numerical forms.
+2. Removed unnecessary characters and newlines
+3. Checked which players are underpaid
+4. Checked duplicate rows
+5. Filled NULL columns with corresponding fallback values
+""")
 
 # Saving modified CSV - Output it later.
-os_path = os.path.join('output_csv','processed_data.csv')
+# Creating directory to save the file.
+dir_name = "output_csv"
+try:
+    os.mkdir(dir_name)
+    print(f"Directory '{dir_name}' created successfully.")
+except FileExistsError:
+    print(f"Directory '{dir_name}' already exists.")
+except PermissionError:
+    print(f"Permission denied: Unable to create '{dir_name}'.")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
+
+os_path = os.path.join(dir_name,'processed_data.csv')
 df.to_csv(os_path,index=False)
