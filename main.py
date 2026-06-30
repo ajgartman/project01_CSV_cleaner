@@ -3,26 +3,22 @@
 # Data analysis and manipulation library built on top of Pandas. Two primary data structures
 # Series and DataFrame. Makes working with structural data intuitive as spreadsheet!
 # 1. Importing modules
+from math import nan
+
 import pandas as pd
 import os
 from datetime import datetime as dt
-import matplotlib.pyplot as plt
-from fontTools.t1Lib import writeOther
-
 CSV_FILE = "fifa21_raw_data.csv"
 
 # Inspecting the data
-reading = pd.read_csv(CSV_FILE,dtype=object)
+df = pd.read_csv(CSV_FILE,dtype=object)
 # Getting the details
 print("----------")
 print("CSV description")
-print(reading.describe())
+print(df.describe())
 print("----------")
 print("CSV information")
-print(reading.info())
-
-# Creating DataFrame object
-df = reading
+print(df.info())
 
 # Sequence
 #1.
@@ -48,15 +44,17 @@ print(df[["Height","Weight"]].dtypes)
 def height_formatting(height):
     # We are having two cases - Feet/Inches and cm's
     # Problem we need to solve is: how can we identify two separate cases.
+    if pd.isna(height):
+        return float('nan')
 
     if "cm" in height:
-        return float(height[:(len(height)-2)])
+        return float(height[:-2])
     elif "'" in height:
         feet_and_inches = height.replace('"',"").split("'")
         feet = feet_and_inches[0]
         inches = feet_and_inches[1]
-        feet_cm = int(feet)*30.48
-        inches_cm = int(inches)*2.54
+        feet_cm = float(feet)*30.48
+        inches_cm = float(inches)*2.54
         total = feet_cm + inches_cm
         return total
     else:
@@ -65,9 +63,13 @@ def height_formatting(height):
 df["Height"] = df["Height"].apply(height_formatting)
 
 def weight_formatting(weight):
+
+    if pd.isna(weight) :
+        return float('nan')
+
     # Two cases: "lbs" and "kg's"
     if "lbs" in weight:
-        lbs_kg_ratio = 0.4535
+        lbs_kg_ratio = 0.45359
         modified_string = weight.replace("lbs","")
         return int(modified_string)*lbs_kg_ratio
     elif "kg" in weight:
@@ -78,7 +80,6 @@ def weight_formatting(weight):
 
 df["Weight"] = df["Weight"].apply(weight_formatting)
 # Using in-built function to change values to numbers
-
 
 # After the modification...
 print("----- After formatting -----")
@@ -99,8 +100,6 @@ date_output = dt.strptime(time,date_format)
 
 def years_check(date):
 
-    wrong_format = 0
-
     if "," in date:
         formatting = date.split(",")
         join_year = int(formatting[1])
@@ -111,7 +110,6 @@ def years_check(date):
         else:
             return "Less than 10 years"
     else:
-        wrong_format += 1
         return "Format not correct!"
 
 # Creating new column and applying function
@@ -120,6 +118,9 @@ df["10 Year Mark"] = df["Joined"].apply(years_check)
 # Task 4. Converting 'Value', 'Wage' and "Release Clause' into numerical form.
 def conversion(value):
     # Two cases.
+    if pd.isna(value):
+        return float('nan')
+
     currency = value.replace("€","")
     if "M" in currency:
         number = currency.replace("M","")
@@ -137,29 +138,19 @@ columns = ["W/F","SM","IR"]
 
 df[columns] = df[columns].map(lambda x: int(x.strip("★").strip()))
 
-ax1 = df.plot.scatter(x="Wage",y="Value")
-
-# Annotation of the graph - computationally heavy
-# for idx,row in df.iterrows():
-#     ax1.annotate(row["ID"],(row['Wage'], row['Value']))
-
-plt.xlabel("Wage of the Player")
-plt.ylabel("Current Value of the Player")
-plt.grid(True)
-plt.show()
-
 # Duplicate check (Extra)
 print("----- Duplicate Check -----")
-duplicates = df.duplicated()
+duplicates = df.duplicated(subset=['LongName','Name'])
 print("Checking if there are any duplicates...: ")
 print(duplicates[duplicates == True])
+print(len(duplicates[duplicates == True]))
+print("----- Duplicate Check End -----")
 
 # Filling missing values (Extra)
 df["Loan Date End"] = df["Loan Date End"].fillna("Not on Loan")
 print(df[["Loan Date End","Hits"]].dtypes)
 
 # Modifying Hits column
-
 def hits_formatting(value):
 
     if pd.isna(value):
